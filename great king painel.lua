@@ -1,421 +1,518 @@
+
 --==================================================
 -- GREAT KING PREMIUM 🐇
--- Roblox Studio | LocalScript
--- UI + VELOCIDADE FUNCIONAL
+-- LocalScript | Roblox Studio
+-- Interface + movimento funcional
 --==================================================
 
 local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local Theme = {
-    Background = Color3.fromRGB(9, 12, 20),
-    Panel = Color3.fromRGB(16, 23, 36),
-    Card = Color3.fromRGB(24, 34, 51),
-    Hover = Color3.fromRGB(34, 48, 70),
-    Blue = Color3.fromRGB(112, 175, 255),
-    White = Color3.fromRGB(240, 245, 255),
-    Muted = Color3.fromRGB(145, 160, 183),
-    Green = Color3.fromRGB(100, 220, 165),
-    Red = Color3.fromRGB(245, 115, 130),
+local C = {
+    bg = Color3.fromRGB(9, 12, 20),
+    panel = Color3.fromRGB(16, 22, 34),
+    card = Color3.fromRGB(24, 33, 49),
+    hover = Color3.fromRGB(38, 52, 73),
+    blue = Color3.fromRGB(112, 175, 255),
+    white = Color3.fromRGB(242, 246, 255),
+    muted = Color3.fromRGB(150, 163, 185),
+    green = Color3.fromRGB(105, 225, 170),
+    red = Color3.fromRGB(255, 115, 130)
 }
 
-local old = playerGui:FindFirstChild("GreatKingPremium")
+local old = PlayerGui:FindFirstChild("GreatKingPremium")
 if old then old:Destroy() end
 
-local function create(class, props, parent)
+local function make(class, props, parent)
     local obj = Instance.new(class)
-
-    for key, value in pairs(props or {}) do
-        obj[key] = value
+    for k, v in pairs(props or {}) do
+        obj[k] = v
     end
-
     obj.Parent = parent
     return obj
 end
 
-local function round(obj, radius)
-    create("UICorner", {
+local function corner(obj, radius)
+    make("UICorner", {
         CornerRadius = UDim.new(0, radius)
     }, obj)
 end
 
-local function stroke(obj, color)
-    create("UIStroke", {
-        Color = color or Theme.Hover,
+local function outline(obj, color)
+    make("UIStroke", {
+        Color = color or C.hover,
         Transparency = 0.25,
         Thickness = 1
     }, obj)
 end
 
-local function tween(obj, props, duration)
-    TweenService:Create(
-        obj,
-        TweenInfo.new(
-            duration or 0.18,
-            Enum.EasingStyle.Quart,
-            Enum.EasingDirection.Out
-        ),
-        props
-    ):Play()
+local function animate(obj, props)
+    TweenService:Create(obj, TweenInfo.new(
+        0.18, Enum.EasingStyle.Quart,
+        Enum.EasingDirection.Out
+    ), props):Play()
 end
 
-local function label(parent, text, pos, size, textSize, color)
-    return create("TextLabel", {
+local function label(parent, text, pos, size, fontSize, color)
+    return make("TextLabel", {
         BackgroundTransparency = 1,
         Position = pos,
         Size = size,
         Text = text,
-        TextColor3 = color or Theme.White,
-        TextSize = textSize or 14,
+        TextSize = fontSize or 14,
+        TextColor3 = color or C.white,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextWrapped = true
     }, parent)
 end
 
--- ESTADO DO PERSONAGEM
+-- ESTADO
 
 local speedEnabled = false
 local speedValue = 24
-local defaultSpeed = 16
+local flyEnabled = false
+local flySpeed = 50
+local spinEnabled = false
+local spinSpeed = 2
 
-local function applySpeed()
-    local character = player.Character
-    local humanoid = character
-        and character:FindFirstChildOfClass("Humanoid")
+local character, humanoid, root
+local attachment, velocity, orientation
+local connections = {}
 
-    if humanoid then
-        humanoid.WalkSpeed = speedEnabled
-            and speedValue
-            or defaultSpeed
+local function cleanupFly()
+    if velocity then velocity:Destroy() velocity = nil end
+    if orientation then orientation:Destroy() orientation = nil end
+    if attachment then attachment:Destroy() attachment = nil end
+end
+
+local function setupCharacter(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    root = char:WaitForChild("HumanoidRootPart")
+
+    humanoid.WalkSpeed = speedEnabled and speedValue or 16
+
+    cleanupFly()
+
+    if flyEnabled then
+        flyEnabled = false
     end
 end
 
-player.CharacterAdded:Connect(function(character)
-    local humanoid = character:WaitForChild("Humanoid", 10)
+if Player.Character then
+    task.spawn(setupCharacter, Player.Character)
+end
 
+Player.CharacterAdded:Connect(setupCharacter)
+
+local function applySpeed()
     if humanoid then
-        humanoid.WalkSpeed = speedEnabled
-            and speedValue
-            or defaultSpeed
+        humanoid.WalkSpeed = speedEnabled and speedValue or 16
     end
-end)
+end
 
 -- GUI
 
-local gui = create("ScreenGui", {
+local gui = make("ScreenGui", {
     Name = "GreatKingPremium",
     ResetOnSpawn = false,
-    IgnoreGuiInset = true
-}, playerGui)
+    IgnoreGuiInset = true,
+    DisplayOrder = 20
+}, PlayerGui)
 
--- JANELA PRINCIPAL
-
-local main = create("Frame", {
+local main = make("Frame", {
     Name = "Main",
     AnchorPoint = Vector2.new(0.5, 0.5),
     Position = UDim2.fromScale(0.5, 0.5),
-    Size = UDim2.new(0.9, 0, 0, 440),
-    BackgroundColor3 = Theme.Background,
+    Size = UDim2.fromOffset(620, 460),
+    BackgroundColor3 = C.bg,
     BorderSizePixel = 0
 }, gui)
 
-main.Size = UDim2.new(
-    0.9, 0,
-    0, math.min(440, workspace.CurrentCamera.ViewportSize.Y - 30)
-)
+corner(main, 18)
+outline(main, C.blue)
 
-create("UISizeConstraint", {
-    MaxSize = Vector2.new(700, 520),
-    MinSize = Vector2.new(300, 330)
+make("UISizeConstraint", {
+    MinSize = Vector2.new(310, 350),
+    MaxSize = Vector2.new(620, 600)
 }, main)
 
-round(main, 18)
-stroke(main, Theme.Blue)
-
--- CABEÇALHO
-
-local header = create("Frame", {
+local header = make("Frame", {
     Size = UDim2.new(1, 0, 0, 65),
-    BackgroundColor3 = Theme.Panel,
+    BackgroundColor3 = C.panel,
     BorderSizePixel = 0
 }, main)
+corner(header, 18)
 
-round(header, 18)
+label(header, "兔  GREAT KING", UDim2.new(0, 20, 0, 0),
+    UDim2.new(1, -80, 1, 0), 21, C.blue).Font =
+    Enum.Font.GothamBold
 
-label(
-    header,
-    "兔  GREAT KING",
-    UDim2.new(0, 18, 0, 0),
-    UDim2.new(1, -75, 1, 0),
-    21,
-    Theme.Blue
-).Font = Enum.Font.GothamBold
-
-local close = create("TextButton", {
-    Position = UDim2.new(1, -48, 0, 13),
-    Size = UDim2.fromOffset(35, 35),
-    BackgroundColor3 = Theme.Card,
+local close = make("TextButton", {
+    Position = UDim2.new(1, -49, 0, 13),
+    Size = UDim2.fromOffset(36, 36),
+    BackgroundColor3 = C.card,
     Text = "×",
-    TextColor3 = Theme.White,
-    TextSize = 23,
+    TextSize = 24,
+    TextColor3 = C.white,
     Font = Enum.Font.Gotham,
     AutoButtonColor = false
 }, header)
+corner(close, 10)
 
-round(close, 10)
+local sidebar = make("Frame", {
+    Position = UDim2.new(0, 12, 0, 77),
+    Size = UDim2.new(0, 145, 1, -89),
+    BackgroundColor3 = C.panel
+}, main)
+corner(sidebar, 12)
 
--- ÁREA DE CONTEÚDO
-
-local content = create("ScrollingFrame", {
-    Position = UDim2.new(0, 14, 0, 80),
-    Size = UDim2.new(1, -28, 1, -94),
-    BackgroundTransparency = 1,
-    BorderSizePixel = 0,
-    ScrollBarThickness = 3,
-    ScrollBarImageColor3 = Theme.Blue,
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    CanvasSize = UDim2.new(0, 0, 0, 0)
+local content = make("Frame", {
+    Position = UDim2.new(0, 169, 0, 77),
+    Size = UDim2.new(1, -181, 1, -89),
+    BackgroundTransparency = 1
 }, main)
 
-create("UIListLayout", {
-    Padding = UDim.new(0, 12),
-    SortOrder = Enum.SortOrder.LayoutOrder
-}, content)
+local pages = {}
+local tabs = {}
+local activePage
 
-label(
-    content,
-    "PERSONAGEM",
-    UDim2.new(),
-    UDim2.new(1, 0, 0, 30),
-    21,
-    Theme.White
-).Font = Enum.Font.GothamBold
+local function createPage(id, title, subtitle)
+    local page = make("ScrollingFrame", {
+        Name = id,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = C.blue,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(),
+        Visible = false
+    }, content)
 
-label(
-    content,
-    "Controles de movimento",
-    UDim2.new(),
-    UDim2.new(1, 0, 0, 23),
-    12,
-    Theme.Muted
-)
+    make("UIListLayout", {
+        Padding = UDim.new(0, 10),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, page)
 
--- CARTÃO DE VELOCIDADE
+    label(page, title, UDim2.new(), UDim2.new(1, -5, 0, 34),
+        22, C.white).Font = Enum.Font.GothamBold
 
-local speedCard = create("Frame", {
-    Size = UDim2.new(1, -4, 0, 82),
-    BackgroundColor3 = Theme.Card,
-    BorderSizePixel = 0
-}, content)
+    label(page, subtitle, UDim2.new(),
+        UDim2.new(1, -5, 0, 25), 12, C.muted)
 
-round(speedCard, 13)
-stroke(speedCard)
-
-label(
-    speedCard,
-    "Velocidade",
-    UDim2.new(0, 13, 0, 9),
-    UDim2.new(1, -100, 0, 25),
-    14,
-    Theme.White
-).Font = Enum.Font.GothamSemibold
-
-label(
-    speedCard,
-    "Ativar movimento personalizado",
-    UDim2.new(0, 13, 0, 37),
-    UDim2.new(1, -100, 0, 23),
-    11,
-    Theme.Muted
-)
-
-local toggle = create("TextButton", {
-    Position = UDim2.new(1, -59, 0.5, -13),
-    Size = UDim2.fromOffset(46, 26),
-    BackgroundColor3 = Theme.Hover,
-    Text = "",
-    AutoButtonColor = false
-}, speedCard)
-
-round(toggle, 20)
-
-local knob = create("Frame", {
-    Position = UDim2.new(0, 3, 0, 3),
-    Size = UDim2.fromOffset(20, 20),
-    BackgroundColor3 = Theme.White
-}, toggle)
-
-round(knob, 20)
-
-local function updateToggle()
-    tween(toggle, {
-        BackgroundColor3 = speedEnabled
-            and Theme.Blue
-            or Theme.Hover
-    })
-
-    tween(knob, {
-        Position = speedEnabled
-            and UDim2.new(1, -23, 0, 3)
-            or UDim2.new(0, 3, 0, 3)
-    })
-
-    applySpeed()
+    pages[id] = page
+    return page
 end
 
-toggle.Activated:Connect(function()
-    speedEnabled = not speedEnabled
-    updateToggle()
-end)
+local function showPage(id)
+    activePage = id
 
--- SLIDER FUNCIONAL
+    for name, page in pairs(pages) do
+        page.Visible = name == id
+    end
 
-local sliderCard = create("Frame", {
-    Size = UDim2.new(1, -4, 0, 100),
-    BackgroundColor3 = Theme.Card,
-    BorderSizePixel = 0
-}, content)
-
-round(sliderCard, 13)
-stroke(sliderCard)
-
-label(
-    sliderCard,
-    "Valor da velocidade",
-    UDim2.new(0, 13, 0, 9),
-    UDim2.new(1, -85, 0, 25),
-    13,
-    Theme.White
-)
-
-local valueLabel = label(
-    sliderCard,
-    tostring(speedValue),
-    UDim2.new(1, -60, 0, 9),
-    UDim2.new(0, 45, 0, 25),
-    13,
-    Theme.Blue
-)
-
-valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-
-local bar = create("Frame", {
-    Position = UDim2.new(0, 14, 0, 55),
-    Size = UDim2.new(1, -28, 0, 8),
-    BackgroundColor3 = Theme.Hover,
-    Active = true
-}, sliderCard)
-
-round(bar, 10)
-
-local fill = create("Frame", {
-    Size = UDim2.new((speedValue - 16) / 134, 0, 1, 0),
-    BackgroundColor3 = Theme.Blue
-}, bar)
-
-round(fill, 10)
-
-local dragging = false
-
-local function updateSlider(x)
-    local percent = math.clamp(
-        (x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
-        0,
-        1
-    )
-
-    speedValue = math.floor(16 + percent * 134 + 0.5)
-
-    valueLabel.Text = tostring(speedValue)
-
-    tween(fill, {
-        Size = UDim2.new(percent, 0, 1, 0)
-    }, 0.08)
-
-    applySpeed()
+    for name, tab in pairs(tabs) do
+        animate(tab, {
+            BackgroundColor3 = name == id and C.hover or C.panel,
+            TextColor3 = name == id and C.blue or C.muted
+        })
+    end
 end
 
-bar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        updateSlider(input.Position.X)
+local function createTab(id, text, order)
+    local tab = make("TextButton", {
+        Position = UDim2.new(0, 8, 0, 12 + (order - 1) * 49),
+        Size = UDim2.new(1, -16, 0, 41),
+        BackgroundColor3 = C.panel,
+        Text = text,
+        TextSize = 11,
+        TextColor3 = C.muted,
+        Font = Enum.Font.GothamBold,
+        AutoButtonColor = false
+    }, sidebar)
+
+    corner(tab, 9)
+    tabs[id] = tab
+    tab.Activated:Connect(function()
+        showPage(id)
+    end)
+end
+
+local function card(parent, height)
+    local f = make("Frame", {
+        Size = UDim2.new(1, -3, 0, height),
+        BackgroundColor3 = C.card
+    }, parent)
+    corner(f, 12)
+    outline(f)
+    return f
+end
+
+local function toggle(parent, title, initial, callback)
+    local f = card(parent, 58)
+
+    label(f, title, UDim2.new(0, 13, 0, 0),
+        UDim2.new(1, -78, 1, 0), 13, C.white)
+
+    local btn = make("TextButton", {
+        Position = UDim2.new(1, -57, 0.5, -12),
+        Size = UDim2.fromOffset(44, 24),
+        BackgroundColor3 = initial and C.blue or C.hover,
+        Text = "",
+        AutoButtonColor = false
+    }, f)
+    corner(btn, 20)
+
+    local knob = make("Frame", {
+        Position = initial and UDim2.new(1, -21, 0, 3)
+            or UDim2.new(0, 3, 0, 3),
+        Size = UDim2.fromOffset(18, 18),
+        BackgroundColor3 = C.white
+    }, btn)
+    corner(knob, 20)
+
+    local enabled = initial
+
+    btn.Activated:Connect(function()
+        enabled = not enabled
+
+        animate(btn, {
+            BackgroundColor3 = enabled and C.blue or C.hover
+        })
+        animate(knob, {
+            Position = enabled and UDim2.new(1, -21, 0, 3)
+                or UDim2.new(0, 3, 0, 3)
+        })
+
+        callback(enabled)
+    end)
+end
+
+local function slider(parent, title, minValue, maxValue, default, callback)
+    local f = card(parent, 82)
+
+    label(f, title, UDim2.new(0, 13, 0, 5),
+        UDim2.new(1, -70, 0, 25), 12, C.white)
+
+    local number = label(f, tostring(default),
+        UDim2.new(1, -55, 0, 5), UDim2.new(0, 42, 0, 25),
+        12, C.blue)
+    number.TextXAlignment = Enum.TextXAlignment.Right
+
+    local bar = make("TextButton", {
+        Position = UDim2.new(0, 13, 0, 48),
+        Size = UDim2.new(1, -26, 0, 8),
+        BackgroundColor3 = C.hover,
+        Text = "",
+        AutoButtonColor = false
+    }, f)
+    corner(bar, 10)
+
+    local percent = (default - minValue) / (maxValue - minValue)
+    local fill = make("Frame", {
+        Size = UDim2.new(percent, 0, 1, 0),
+        BackgroundColor3 = C.blue
+    }, bar)
+    corner(fill, 10)
+
+    local dragging = false
+
+    local function update(x)
+        local p = math.clamp(
+            (x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1
+        )
+        local value = math.floor(
+            minValue + p * (maxValue - minValue) + 0.5
+        )
+
+        number.Text = tostring(value)
+        fill.Size = UDim2.new(p, 0, 1, 0)
+        callback(value)
+    end
+
+    bar.Activated:Connect(function()
+        update(UIS:GetMouseLocation().X)
+    end)
+
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input.Position.X)
+        end
+    end)
+
+    local moveConnection = UIS.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            update(input.Position.X)
+        end
+    end)
+
+    local endConnection = UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    table.insert(connections, moveConnection)
+    table.insert(connections, endConnection)
+end
+
+-- PÁGINAS
+
+local home = createPage("Home", "Visão geral", "GREAT KING • PREMIUM")
+local characterPage = createPage("Character", "Personagem",
+    "Movimento do seu personagem")
+local visualPage = createPage("Visual", "Interface",
+    "Personalização do painel")
+
+createTab("Home", "⌂   INÍCIO", 1)
+createTab("Character", "◇   PERSONAGEM", 2)
+createTab("Visual", "◈   VISUAL", 3)
+
+local welcome = card(home, 90)
+label(welcome, "Bem-vindo ao Great King",
+    UDim2.new(0, 14, 0, 12), UDim2.new(1, -25, 0, 30),
+    17, C.blue).Font = Enum.Font.GothamBold
+label(welcome, "Painel de controle do seu personagem.",
+    UDim2.new(0, 14, 0, 45), UDim2.new(1, -25, 0, 25),
+    12, C.muted)
+
+toggle(characterPage, "Ativar velocidade", false, function(state)
+    speedEnabled = state
+    applySpeed()
+end)
+
+slider(characterPage, "Velocidade de caminhada", 16, 100, speedValue,
+    function(value)
+        speedValue = value
+        applySpeed()
+    end)
+
+toggle(characterPage, "Ativar voo", false, function(state)
+    flyEnabled = state
+    cleanupFly()
+
+    if not state or not root or not root.Parent then
+        return
+    end
+
+    attachment = Instance.new("Attachment")
+    attachment.Name = "GreatKingFlightAttachment"
+    attachment.Parent = root
+
+    velocity = Instance.new("LinearVelocity")
+    velocity.Name = "GreatKingFlightVelocity"
+    velocity.Attachment0 = attachment
+    velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+    velocity.VelocityConstraintMode =
+        Enum.VelocityConstraintMode.Vector
+    velocity.MaxForce = 100000
+    velocity.VectorVelocity = Vector3.zero
+    velocity.Parent = root
+
+    orientation = Instance.new("AlignOrientation")
+    orientation.Attachment0 = attachment
+    orientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    orientation.MaxTorque = 100000
+    orientation.Responsiveness = 15
+    orientation.Parent = root
+end)
+
+slider(characterPage, "Velocidade de voo", 10, 100, flySpeed,
+    function(value)
+        flySpeed = value
+    end)
+
+toggle(characterPage, "Rotação contínua", false, function(state)
+    spinEnabled = state
+end)
+
+slider(characterPage, "Velocidade de rotação", 1, 10, spinSpeed,
+    function(value)
+        spinSpeed = value
+    end)
+
+toggle(visualPage, "Mostrar contorno do personagem",
+    false, function(state)
+        local char = Player.Character
+        if not char then return end
+
+        local highlight = char:FindFirstChild("GK_Highlight")
+
+        if state and not highlight then
+            highlight = Instance.new("Highlight")
+            highlight.Name = "GK_Highlight"
+            highlight.FillColor = C.blue
+            highlight.OutlineColor = C.blue
+            highlight.FillTransparency = 0.85
+            highlight.Parent = char
+        elseif not state and highlight then
+            highlight:Destroy()
+        end
+    end)
+
+showPage("Home")
+
+-- VOO E ROTAÇÃO
+
+local renderConnection = RunService.RenderStepped:Connect(function(dt)
+    if not root or not root.Parent then return end
+
+    if flyEnabled and velocity then
+        local camera = workspace.CurrentCamera
+        if not camera then return end
+
+        local direction = Vector3.zero
+
+        if UIS:IsKeyDown(Enum.KeyCode.W) then
+            direction += camera.CFrame.LookVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then
+            direction -= camera.CFrame.LookVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then
+            direction -= camera.CFrame.RightVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then
+            direction += camera.CFrame.RightVector
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then
+            direction += Vector3.yAxis
+        end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+            direction -= Vector3.yAxis
+        end
+
+        velocity.VectorVelocity = direction.Magnitude > 0
+            and direction.Unit * flySpeed
+            or Vector3.zero
+
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        end
+    end
+
+    if spinEnabled and humanoid and not flyEnabled then
+        root.CFrame = root.CFrame
+            * CFrame.Angles(0, math.rad(spinSpeed * 60 * dt), 0)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (
-        input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
-        updateSlider(input.Position.X)
-    end
-end)
+table.insert(connections, renderConnection)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
--- BOTÃO DE RESTAURAÇÃO
-
-local reset = create("TextButton", {
-    Size = UDim2.new(1, -4, 0, 44),
-    BackgroundColor3 = Theme.Panel,
-    Text = "RESTAURAR PADRÃO",
-    TextColor3 = Theme.Muted,
-    TextSize = 12,
-    Font = Enum.Font.GothamBold,
-    AutoButtonColor = false
-}, content)
-
-round(reset, 12)
-stroke(reset)
-
-reset.Activated:Connect(function()
-    speedEnabled = false
-    speedValue = 24
-
-    valueLabel.Text = tostring(speedValue)
-    fill.Size = UDim2.new((speedValue - 16) / 134, 0, 1, 0)
-
-    updateToggle()
-end)
-
--- BOTÃO FLUTUANTE
-
-local floating = create("TextButton", {
-    Position = UDim2.new(0, 18, 0.5, -28),
-    Size = UDim2.fromOffset(56, 56),
-    BackgroundColor3 = Theme.Panel,
-    Text = "兔",
-    TextColor3 = Theme.Blue,
-    TextSize = 27,
-    Font = Enum.Font.GothamBold,
-    Visible = false,
-    AutoButtonColor = false
-}, gui)
-
-round(floating, 18)
-stroke(floating, Theme.Blue)
-
-floating.Activated:Connect(function()
-    main.Visible = not main.Visible
-end)
-
-close.Activated:Connect(function()
-    main.Visible = false
-    floating.Visible = true
-end)
-
--- ARRASTAR PELO CABEÇALHO
+-- ARRASTAR JANELA
 
 local draggingWindow = false
 local dragStart
@@ -430,13 +527,12 @@ header.InputBegan:Connect(function(input)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
     if draggingWindow and (
         input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch
     ) then
         local delta = input.Position - dragStart
-
         main.Position = UDim2.new(
             startPosition.X.Scale,
             startPosition.X.Offset + delta.X,
@@ -444,4 +540,37 @@ UserInputService.InputChanged:Connect(function(input)
             startPosition.Y.Offset + delta.Y
         )
     end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingWindow = false
+    end
+end)
+
+-- BOTÃO FLUTUANTE
+
+local floating = make("TextButton", {
+    Position = UDim2.new(0, 18, 0.5, -28),
+    Size = UDim2.fromOffset(56, 56),
+    BackgroundColor3 = C.panel,
+    Text = "兔",
+    TextColor3 = C.blue,
+    TextSize = 28,
+    Font = Enum.Font.GothamBold,
+    Visible = false,
+    AutoButtonColor = false
+}, gui)
+corner(floating, 18)
+outline(floating, C.blue)
+
+floating.Activated:Connect(function()
+    main.Visible = not main.Visible
+    floating.Visible = not main.Visible
+end)
+
+close.Activated:Connect(function()
+    main.Visible = false
+    floating.Visible = true
 end)
