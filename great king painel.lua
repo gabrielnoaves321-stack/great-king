@@ -1,1102 +1,524 @@
---==================================================
--- GREAT KING 🐇
--- LocalScript - use no seu próprio jogo Roblox
---==================================================
+-- GREAT KING PREMIUM 🐇
+-- LocalScript | Roblox Studio
 
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
-local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
-local Camera = workspace.CurrentCamera
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
---==================================================
--- CONFIGURAÇÃO
---==================================================
-
-local BLUE = Color3.fromRGB(0, 120, 255)
-local DARK_BLUE = Color3.fromRGB(0, 35, 70)
-local BLACK = Color3.fromRGB(5, 5, 5)
-local DARK = Color3.fromRGB(12, 12, 12)
-local WHITE = Color3.fromRGB(235, 235, 235)
-
---==================================================
--- REMOVE PAINEL ANTIGO
---==================================================
-
-local OldGui = PlayerGui:FindFirstChild("RIPGB_PANEL")
-if OldGui then
-	OldGui:Destroy()
-end
-
---==================================================
--- KEYS
---==================================================
-
-local SENHAS = {
-	["RIPGB-7K2M"] = true,
-	["RIPGB-9Q4X"] = true,
-	["RIPGB-3T8P"] = true,
-	["RIPGB-6N5V"] = true,
-	["RIPGB-2H9R"] = true,
-	["RIPGB-8W3L"] = true,
-	["RIPGB-4F7Z"] = true,
-	["RIPGB-5C2J"] = true,
-	["RIPGB-1M8K"] = true,
-	["RIPGB-0X6Q"] = true,
-	["RIPGB-A7P3"] = true,
-	["RIPGB-B9L5"] = true,
-	["RIPGB-C4N8"] = true,
-	["RIPGB-D2V6"] = true,
-	["RIPGB-E8R1"] = true,
-	["RIPGB-F5K9"] = true,
-	["RIPGB-G3T7"] = true,
-	["RIPGB-H6M2"] = true,
-	["RIPGB-J9Q4"] = true,
-	["RIPGB-K1W8"] = true,
-	["RIPGB-L5X3"] = true,
-	["RIPGB-M7C9"] = true,
-	["RIPGB-N2F6"] = true,
-	["RIPGB-P8H4"] = true,
-	["RIPGB-Q3V7"] = true,
-	["RIPGB-R6Z1"] = true,
-	["RIPGB-S9K5"] = true,
-	["RIPGB-T4M8"] = true,
-	["RIPGB-V2L6"] = true,
-	["RIPGB-W7P3"] = true,
-	["RIPGB-X5N9"] = true,
-	["RIPGB-Y1C4"] = true,
-	["RIPGB-Z8F2"] = true,
-	["RIPGB-3H6K"] = true,
-	["RIPGB-9J2M"] = true,
-	["RIPGB-4Q7R"] = true,
-	["RIPGB-6V1X"] = true,
-	["RIPGB-8L5T"] = true,
-	["RIPGB-2P9W"] = true,
-	["RIPGB-7C3Z"] = true,
-	["RIPGB-5M8F"] = true,
-	["RIPGB-1R6H"] = true,
-	["RIPGB-9X4K"] = true,
-	["RIPGB-3N7Q"] = true,
-	["RIPGB-6T2V"] = true,
-	["RIPGB-8Z5L"] = true,
-	["RIPGB-4W1P"] = true,
-	["RIPGB-7F9C"] = true,
-	["RIPGB-2K6M"] = true,
-	["RIPGB-5Q8X"] = true
+local C = {
+    Background = Color3.fromRGB(8, 11, 19),
+    Panel = Color3.fromRGB(15, 21, 33),
+    Card = Color3.fromRGB(22, 31, 47),
+    Hover = Color3.fromRGB(32, 45, 65),
+    Blue = Color3.fromRGB(113, 174, 255),
+    White = Color3.fromRGB(240, 245, 255),
+    Muted = Color3.fromRGB(145, 160, 184),
+    Border = Color3.fromRGB(45, 60, 82),
+    Green = Color3.fromRGB(105, 220, 165),
+    Red = Color3.fromRGB(245, 115, 130),
 }
 
---==================================================
--- VARIÁVEIS
---==================================================
+local Keys = {
+    ["RIPGB-7K2M"] = true,
+    ["RIPGB-9Q4X"] = true,
+    ["RIPGB-3T8P"] = true,
+}
 
-local SpeedEnabled = false
-local SpeedValue = 16
+local old = PlayerGui:FindFirstChild("GreatKingPremium")
+if old then old:Destroy() end
 
-local FlyEnabled = false
-local FlySpeed = 50
-local FlyVelocity
-
-local SpinEnabled = false
-local SpinSpeed = 20
-
-local NoClipEnabled = false
-
-local AimbotEnabled = false
-local AimPart = "Head"
-local AimFOV = 150
-
-local ESPBoxEnabled = false
-local ESPLineEnabled = false
-local ESPHealthEnabled = false
-
-local Unlocked = false
-
---==================================================
--- GUI
---==================================================
-
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "RIPGB_PANEL"
-Gui.ResetOnSpawn = false
-Gui.IgnoreGuiInset = true
-Gui.Parent = PlayerGui
-
---==================================================
--- FUNÇÕES VISUAIS
---==================================================
-
-local function Corner(obj, radius)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius)
-	c.Parent = obj
+local function New(class, props, parent)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        obj[k] = v
+    end
+    obj.Parent = parent
+    return obj
 end
 
-local function Border(obj)
-	local s = Instance.new("UIStroke")
-	s.Color = BLUE
-	s.Thickness = 1.5
-	s.Transparency = 0.15
-	s.Parent = obj
+local function Round(obj, radius)
+    New("UICorner", {
+        CornerRadius = UDim.new(0, radius)
+    }, obj)
 end
 
-local function Label(parent, text, size, position)
-	local l = Instance.new("TextLabel")
-	l.Size = size
-	l.Position = position
-	l.BackgroundTransparency = 1
-	l.Text = text
-	l.TextColor3 = WHITE
-	l.TextScaled = true
-	l.Font = Enum.Font.GothamBold
-	l.Parent = parent
-	return l
+local function Outline(obj, color)
+    New("UIStroke", {
+        Color = color or C.Border,
+        Transparency = 0.2,
+        Thickness = 1
+    }, obj)
 end
 
---==================================================
--- TELA DA KEY
---==================================================
-
-local PasswordFrame = Instance.new("Frame")
-PasswordFrame.Size = UDim2.new(0, 400, 0, 250)
-PasswordFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
-PasswordFrame.BackgroundColor3 = BLACK
-PasswordFrame.Parent = Gui
-
-Corner(PasswordFrame, 15)
-Border(PasswordFrame)
-
-local KeyTitle = Label(
-	PasswordFrame,
-	"🐇  GREAT KING",
-	UDim2.new(1, -30, 0, 55),
-	UDim2.new(0, 15, 0, 15)
-)
-
-KeyTitle.TextColor3 = BLUE
-
-local KeySub = Label(
-	PasswordFrame,
-	"DIGITE SUA KEY",
-	UDim2.new(1, -40, 0, 30),
-	UDim2.new(0, 20, 0, 70)
-)
-
-local PasswordBox = Instance.new("TextBox")
-PasswordBox.Size = UDim2.new(1, -50, 0, 48)
-PasswordBox.Position = UDim2.new(0, 25, 0, 108)
-PasswordBox.BackgroundColor3 = DARK
-PasswordBox.PlaceholderText = "RIPGB-XXXX"
-PasswordBox.Text = ""
-PasswordBox.TextColor3 = WHITE
-PasswordBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-PasswordBox.TextScaled = true
-PasswordBox.Font = Enum.Font.Gotham
-PasswordBox.ClearTextOnFocus = false
-PasswordBox.Parent = PasswordFrame
-
-Corner(PasswordBox, 10)
-Border(PasswordBox)
-
-local EnterButton = Instance.new("TextButton")
-EnterButton.Size = UDim2.new(1, -50, 0, 48)
-EnterButton.Position = UDim2.new(0, 25, 0, 170)
-EnterButton.BackgroundColor3 = BLUE
-EnterButton.Text = "ENTRAR"
-EnterButton.TextColor3 = Color3.fromRGB(255,255,255)
-EnterButton.TextScaled = true
-EnterButton.Font = Enum.Font.GothamBold
-EnterButton.Parent = PasswordFrame
-
-Corner(EnterButton, 10)
-
---==================================================
--- PAINEL PRINCIPAL
---==================================================
-
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 700, 0, 470)
-Main.Position = UDim2.new(0.5, -350, 0.5, -235)
-Main.BackgroundColor3 = BLACK
-Main.Visible = false
-Main.Parent = Gui
-
-Corner(Main, 15)
-Border(Main)
-
---==================================================
--- TÍTULO
---==================================================
-
-local MainTitle = Label(
-	Main,
-	"🐇  GREAT KING",
-	UDim2.new(1, -70, 0, 55),
-	UDim2.new(0, 15, 0, 5)
-)
-
-MainTitle.TextColor3 = BLUE
-
---==================================================
--- FECHAR
---==================================================
-
-local Close = Instance.new("TextButton")
-Close.Size = UDim2.new(0, 42, 0, 42)
-Close.Position = UDim2.new(1, -52, 0, 8)
-Close.BackgroundColor3 = BLUE
-Close.Text = "X"
-Close.TextColor3 = Color3.fromRGB(255,255,255)
-Close.TextScaled = true
-Close.Font = Enum.Font.GothamBold
-Close.Parent = Main
-
-Corner(Close, 10)
-
---==================================================
--- ABAS
---==================================================
-
-local Tabs = Instance.new("Frame")
-Tabs.Size = UDim2.new(0, 155, 1, -75)
-Tabs.Position = UDim2.new(0, 10, 0, 65)
-Tabs.BackgroundColor3 = DARK
-Tabs.Parent = Main
-
-Corner(Tabs, 12)
-Border(Tabs)
-
-local Pages = Instance.new("Frame")
-Pages.Size = UDim2.new(1, -180, 1, -75)
-Pages.Position = UDim2.new(0, 170, 0, 65)
-Pages.BackgroundTransparency = 1
-Pages.Parent = Main
-
-local CharacterPage = Instance.new("Frame")
-CharacterPage.Size = UDim2.fromScale(1,1)
-CharacterPage.BackgroundTransparency = 1
-CharacterPage.Parent = Pages
-
-local CombatPage = CharacterPage:Clone()
-CombatPage.Parent = Pages
-CombatPage.Visible = false
-
-local ESPPage = CharacterPage:Clone()
-ESPPage.Parent = Pages
-ESPPage.Visible = false
-
-local function TabButton(text, y)
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1, -20, 0, 50)
-	b.Position = UDim2.new(0, 10, 0, y)
-	b.BackgroundColor3 = DARK
-	b.Text = text
-	b.TextColor3 = WHITE
-	b.TextScaled = true
-	b.Font = Enum.Font.GothamBold
-	b.Parent = Tabs
-
-	Corner(b, 10)
-	Border(b)
-
-	return b
+local function Label(parent, text, size, pos, textSize, color)
+    return New("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = text,
+        Size = size,
+        Position = pos,
+        TextColor3 = color or C.White,
+        TextSize = textSize or 14,
+        Font = Enum.Font.GothamMedium,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true
+    }, parent)
 end
 
-local CharacterTab = TabButton("PERSONAGEM", 15)
-local CombatTab = TabButton("COMBATE", 75)
-local ESPTab = TabButton("ESP", 135)
-
-local function ShowPage(page)
-	CharacterPage.Visible = false
-	CombatPage.Visible = false
-	ESPPage.Visible = false
-	page.Visible = true
+local function Animate(obj, props)
+    TweenService:Create(
+        obj,
+        TweenInfo.new(0.18, Enum.EasingStyle.Quart,
+            Enum.EasingDirection.Out),
+        props
+    ):Play()
 end
 
-CharacterTab.MouseButton1Click:Connect(function()
-	ShowPage(CharacterPage)
-end)
+local Gui = New("ScreenGui", {
+    Name = "GreatKingPremium",
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true
+}, PlayerGui)
 
-CombatTab.MouseButton1Click:Connect(function()
-	ShowPage(CombatPage)
-end)
+-- TELA DE KEY
 
-ESPTab.MouseButton1Click:Connect(function()
-	ShowPage(ESPPage)
-end)
+local Login = New("Frame", {
+    Size = UDim2.fromOffset(370, 285),
+    Position = UDim2.fromScale(0.5, 0.5),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = C.Panel
+}, Gui)
 
---==================================================
--- BOTÕES
---==================================================
+Round(Login, 20)
+Outline(Login, C.Blue)
 
-local function Toggle(parent, text, y, callback)
+Label(Login, "兔", UDim2.new(1, 0, 0, 55),
+    UDim2.new(0, 0, 0, 18), 38, C.Blue).TextXAlignment =
+    Enum.TextXAlignment.Center
 
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(0, 300, 0, 48)
-	b.Position = UDim2.new(0, 20, 0, y)
-	b.BackgroundColor3 = DARK
-	b.Text = text .. " : OFF"
-	b.TextColor3 = WHITE
-	b.TextScaled = true
-	b.Font = Enum.Font.GothamBold
-	b.Parent = parent
+Label(Login, "GREAT KING", UDim2.new(1, -30, 0, 35),
+    UDim2.new(0, 15, 0, 75), 24, C.White).TextXAlignment =
+    Enum.TextXAlignment.Center
 
-	Corner(b, 10)
-	Border(b)
+Label(Login, "PREMIUM CONTROL CENTER",
+    UDim2.new(1, -30, 0, 20),
+    UDim2.new(0, 15, 0, 110), 10, C.Muted).TextXAlignment =
+    Enum.TextXAlignment.Center
 
-	local state = false
+local KeyBox = New("TextBox", {
+    Position = UDim2.new(0, 25, 0, 145),
+    Size = UDim2.new(1, -50, 0, 43),
+    BackgroundColor3 = C.Background,
+    PlaceholderText = "Digite sua key",
+    PlaceholderColor3 = C.Muted,
+    Text = "",
+    TextColor3 = C.White,
+    TextSize = 14,
+    Font = Enum.Font.Gotham,
+    ClearTextOnFocus = false
+}, Login)
 
-	b.MouseButton1Click:Connect(function()
+Round(KeyBox, 10)
+Outline(KeyBox)
 
-		state = not state
+local Enter = New("TextButton", {
+    Position = UDim2.new(0, 25, 0, 200),
+    Size = UDim2.new(1, -50, 0, 42),
+    BackgroundColor3 = C.Blue,
+    Text = "ENTRAR  →",
+    TextColor3 = C.Background,
+    TextSize = 14,
+    Font = Enum.Font.GothamBold,
+    AutoButtonColor = false
+}, Login)
 
-		if state then
-			b.Text = text .. " : ON"
-			b.BackgroundColor3 = BLUE
-		else
-			b.Text = text .. " : OFF"
-			b.BackgroundColor3 = DARK
-		end
+Round(Enter, 10)
 
-		callback(state)
-	end)
+local Message = Label(Login, "Aguardando acesso",
+    UDim2.new(1, -30, 0, 20),
+    UDim2.new(0, 15, 1, -27), 11, C.Muted)
+Message.TextXAlignment = Enum.TextXAlignment.Center
 
-	return b
+-- PAINEL
+
+local Main = New("Frame", {
+    Size = UDim2.fromOffset(720, 460),
+    Position = UDim2.fromScale(0.5, 0.5),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = C.Background,
+    Visible = false,
+    ClipsDescendants = true
+}, Gui)
+
+Round(Main, 18)
+Outline(Main, C.Border)
+
+local Header = New("Frame", {
+    Size = UDim2.new(1, 0, 0, 65),
+    BackgroundColor3 = C.Panel
+}, Main)
+
+Label(Header, "兔  GREAT KING",
+    UDim2.new(1, -100, 1, 0),
+    UDim2.new(0, 20, 0, 0), 21, C.Blue).Font =
+    Enum.Font.GothamBold
+
+local Close = New("TextButton", {
+    Size = UDim2.fromOffset(38, 38),
+    Position = UDim2.new(1, -49, 0, 13),
+    BackgroundColor3 = C.Card,
+    Text = "×",
+    TextColor3 = C.White,
+    TextSize = 23,
+    Font = Enum.Font.Gotham
+}, Header)
+
+Round(Close, 10)
+
+local Sidebar = New("Frame", {
+    Position = UDim2.new(0, 12, 0, 77),
+    Size = UDim2.new(0, 155, 1, -89),
+    BackgroundColor3 = C.Panel
+}, Main)
+
+Round(Sidebar, 13)
+Outline(Sidebar)
+
+local Content = New("Frame", {
+    Position = UDim2.new(0, 180, 0, 77),
+    Size = UDim2.new(1, -192, 1, -89),
+    BackgroundTransparency = 1
+}, Main)
+
+local Pages = {}
+local Tabs = {}
+local ActiveTab
+
+local function CreatePage(id, title, subtitle)
+    local page = New("ScrollingFrame", {
+        Name = id,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = C.Blue,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Visible = false
+    }, Content)
+
+    New("UIListLayout", {
+        Padding = UDim.new(0, 10),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, page)
+
+    Label(page, title, UDim2.new(1, -8, 0, 35),
+        UDim2.new(), 23, C.White).Font = Enum.Font.GothamBold
+
+    Label(page, subtitle, UDim2.new(1, -8, 0, 25),
+        UDim2.new(), 11, C.Muted)
+
+    Pages[id] = page
+    return page
 end
 
---==================================================
--- SLIDERS
---==================================================
-
-local function Slider(parent, text, y, min, max, default, callback)
-
-	local title = Label(
-		parent,
-		text .. ": " .. default,
-		UDim2.new(0, 300, 0, 30),
-		UDim2.new(0, 20, 0, y)
-	)
-
-	title.TextColor3 = BLUE
-
-	local bar = Instance.new("Frame")
-	bar.Size = UDim2.new(0, 300, 0, 12)
-	bar.Position = UDim2.new(0, 20, 0, y + 35)
-	bar.BackgroundColor3 = DARK
-	bar.Parent = parent
-
-	Corner(bar, 8)
-	Border(bar)
-
-	local fill = Instance.new("Frame")
-	fill.Size = UDim2.new(
-		(default - min) / (max - min),
-		0,
-		1,
-		0
-	)
-
-	fill.BackgroundColor3 = BLUE
-	fill.Parent = bar
-
-	Corner(fill, 8)
-
-	local dragging = false
-
-	local function update(x)
-
-		local percent = math.clamp(
-			(x - bar.AbsolutePosition.X) /
-			bar.AbsoluteSize.X,
-			0,
-			1
-		)
-
-		local value = math.floor(
-			min + (max - min) * percent
-		)
-
-		fill.Size = UDim2.new(percent,0,1,0)
-		title.Text = text .. ": " .. value
-
-		callback(value)
-	end
-
-	bar.InputBegan:Connect(function(input)
-
-		if input.UserInputType ==
-			Enum.UserInputType.MouseButton1 then
-
-			dragging = true
-			update(input.Position.X)
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-
-		if dragging and
-			input.UserInputType ==
-			Enum.UserInputType.MouseMovement then
-
-			update(input.Position.X)
-		end
-	end)
-
-	UserInputService.InputEnded:Connect(function(input)
-
-		if input.UserInputType ==
-			Enum.UserInputType.MouseButton1 then
-
-			dragging = false
-		end
-	end)
+local function ShowPage(id)
+    ActiveTab = id
+    for name, page in pairs(Pages) do
+        page.Visible = name == id
+    end
+    for name, tab in pairs(Tabs) do
+        Animate(tab, {
+            BackgroundColor3 = name == id and C.Hover or C.Panel,
+            TextColor3 = name == id and C.Blue or C.Muted
+        })
+    end
 end
 
---==================================================
--- PERSONAGEM
---==================================================
+local function CreateTab(id, text, order)
+    local tab = New("TextButton", {
+        Position = UDim2.new(0, 8, 0, 12 + (order - 1) * 51),
+        Size = UDim2.new(1, -16, 0, 43),
+        BackgroundColor3 = C.Panel,
+        Text = text,
+        TextColor3 = C.Muted,
+        TextSize = 12,
+        Font = Enum.Font.GothamSemibold,
+        AutoButtonColor = false
+    }, Sidebar)
 
-Toggle(CharacterPage, "SPEED", 15, function(state)
-	SpeedEnabled = state
-end)
+    Round(tab, 9)
+    Tabs[id] = tab
 
-Slider(
-	CharacterPage,
-	"VELOCIDADE",
-	70,
-	16,
-	150,
-	16,
-	function(value)
-		SpeedValue = value
-	end
-)
+    tab.MouseButton1Click:Connect(function()
+        ShowPage(id)
+    end)
 
-Toggle(CharacterPage, "FLY", 140, function(state)
+    tab.MouseEnter:Connect(function()
+        if ActiveTab ~= id then
+            Animate(tab, {BackgroundColor3 = C.Hover})
+        end
+    end)
 
-	FlyEnabled = state
-
-	local char = Player.Character
-	local root = char and char:FindFirstChild("HumanoidRootPart")
-
-	if state and root then
-
-		if FlyVelocity then
-			FlyVelocity:Destroy()
-		end
-
-		FlyVelocity = Instance.new("BodyVelocity")
-		FlyVelocity.MaxForce =
-			Vector3.new(math.huge, math.huge, math.huge)
-
-		FlyVelocity.Velocity = Vector3.zero
-		FlyVelocity.Parent = root
-
-	elseif FlyVelocity then
-
-		FlyVelocity:Destroy()
-		FlyVelocity = nil
-	end
-end)
-
-Slider(
-	CharacterPage,
-	"VELOCIDADE FLY",
-	195,
-	10,
-	150,
-	50,
-	function(value)
-		FlySpeed = value
-	end
-)
-
-Toggle(CharacterPage, "SPIN", 265, function(state)
-	SpinEnabled = state
-end)
-
-Slider(
-	CharacterPage,
-	"VELOCIDADE SPIN",
-	320,
-	1,
-	100,
-	20,
-	function(value)
-		SpinSpeed = value
-	end
-)
-
-Toggle(CharacterPage, "NOCLIP", 390, function(state)
-	NoClipEnabled = state
-end)
-
---==================================================
--- COMBATE
---==================================================
-
-Toggle(CombatPage, "AIMBOT", 15, function(state)
-	AimbotEnabled = state
-end)
-
-local AimButton = Instance.new("TextButton")
-AimButton.Size = UDim2.new(0, 300, 0, 48)
-AimButton.Position = UDim2.new(0, 20, 0, 75)
-AimButton.BackgroundColor3 = DARK
-AimButton.Text = "MIRA: CABEÇA"
-AimButton.TextColor3 = WHITE
-AimButton.TextScaled = true
-AimButton.Font = Enum.Font.GothamBold
-AimButton.Parent = CombatPage
-
-Corner(AimButton, 10)
-Border(AimButton)
-
-AimButton.MouseButton1Click:Connect(function()
-
-	if AimPart == "Head" then
-
-		AimPart = "HumanoidRootPart"
-		AimButton.Text = "MIRA: TRONCO"
-
-	else
-
-		AimPart = "Head"
-		AimButton.Text = "MIRA: CABEÇA"
-	end
-end)
-
-Slider(
-	CombatPage,
-	"RAIO DO AIM",
-	135,
-	50,
-	400,
-	150,
-	function(value)
-		AimFOV = value
-	end
-)
-
---==================================================
--- ESP
---==================================================
-
-Toggle(ESPPage, "ESP CAIXA", 15, function(state)
-	ESPBoxEnabled = state
-end)
-
-Toggle(ESPPage, "ESP LINHA", 75, function(state)
-	ESPLineEnabled = state
-end)
-
-Toggle(ESPPage, "ESP BARRA DE VIDA", 135, function(state)
-	ESPHealthEnabled = state
-end)
-
---==================================================
--- FOV
---==================================================
-
-local FOVCircle = Instance.new("Frame")
-FOVCircle.Size = UDim2.new(
-	0,
-	AimFOV * 2,
-	0,
-	AimFOV * 2
-)
-
-FOVCircle.AnchorPoint = Vector2.new(.5,.5)
-FOVCircle.BackgroundTransparency = 1
-FOVCircle.Visible = false
-FOVCircle.Parent = Gui
-
-Corner(FOVCircle, 999)
-
-local FOVStroke = Instance.new("UIStroke")
-FOVStroke.Color = BLUE
-FOVStroke.Thickness = 2
-FOVStroke.Parent = FOVCircle
-
---==================================================
--- ESP
---==================================================
-
-local ESPObjects = {}
-
-local function RemoveESP(target)
-
-	local data = ESPObjects[target]
-
-	if data then
-
-		for _, obj in pairs(data) do
-
-			if obj and obj.Parent then
-				obj:Destroy()
-			end
-		end
-
-		ESPObjects[target] = nil
-	end
+    tab.MouseLeave:Connect(function()
+        if ActiveTab ~= id then
+            Animate(tab, {BackgroundColor3 = C.Panel})
+        end
+    end)
 end
 
-local function CreateESP(target)
-
-	if target == Player then
-		return
-	end
-
-	local char = target.Character
-
-	if not char then
-		return
-	end
-
-	RemoveESP(target)
-
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "GREATKING_ESP"
-	highlight.Adornee = char
-	highlight.FillColor = BLUE
-	highlight.OutlineColor = BLUE
-	highlight.FillTransparency = 0.8
-	highlight.OutlineTransparency = 0
-	highlight.Parent = char
-
-	local healthGui = Instance.new("BillboardGui")
-	healthGui.Name = "GREATKING_HEALTH"
-	healthGui.Size = UDim2.new(0,100,0,30)
-	healthGui.StudsOffset = Vector3.new(0,3,0)
-	healthGui.AlwaysOnTop = true
-	healthGui.Parent = char
-
-	local healthBack = Instance.new("Frame")
-	healthBack.Size = UDim2.new(.9,0,.35,0)
-	healthBack.Position = UDim2.new(.05,0,.3,0)
-	healthBack.BackgroundColor3 = DARK
-	healthBack.Parent = healthGui
-
-	Corner(healthBack,5)
-
-	local healthFill = Instance.new("Frame")
-	healthFill.Size = UDim2.new(1,0,1,0)
-	healthFill.BackgroundColor3 = BLUE
-	healthFill.Parent = healthBack
-
-	Corner(healthFill,5)
-
-	ESPObjects[target] = {
-		Highlight = highlight,
-		HealthGui = healthGui,
-		HealthFill = healthFill
-	}
+local function Card(parent, height)
+    local card = New("Frame", {
+        Size = UDim2.new(1, -4, 0, height),
+        BackgroundColor3 = C.Card
+    }, parent)
+    Round(card, 12)
+    Outline(card)
+    return card
 end
 
---==================================================
--- AIMBOT
---==================================================
+local function Toggle(parent, title, callback)
+    local card = Card(parent, 62)
 
-local function GetTarget()
+    Label(card, title, UDim2.new(1, -85, 1, 0),
+        UDim2.new(0, 13, 0, 0), 13, C.White)
 
-	local closest = nil
-	local distance = AimFOV
+    local switch = New("TextButton", {
+        Size = UDim2.fromOffset(43, 24),
+        Position = UDim2.new(1, -55, 0.5, -12),
+        BackgroundColor3 = C.Hover,
+        Text = "",
+        AutoButtonColor = false
+    }, card)
 
-	local mouse = UserInputService:GetMouseLocation()
+    Round(switch, 20)
 
-	for _, target in ipairs(Players:GetPlayers()) do
+    local knob = New("Frame", {
+        Size = UDim2.fromOffset(18, 18),
+        Position = UDim2.new(0, 3, 0, 3),
+        BackgroundColor3 = C.White
+    }, switch)
 
-		if target ~= Player then
+    Round(knob, 20)
 
-			local char = target.Character
-			local hum = char and
-				char:FindFirstChildOfClass("Humanoid")
+    local enabled = false
 
-			local part = char and
-				char:FindFirstChild(AimPart)
+    switch.MouseButton1Click:Connect(function()
+        enabled = not enabled
 
-			if hum and hum.Health > 0 and part then
+        Animate(switch, {
+            BackgroundColor3 = enabled and C.Blue or C.Hover
+        })
 
-				local screen, onScreen =
-					Camera:WorldToViewportPoint(part.Position)
+        Animate(knob, {
+            Position = enabled
+                and UDim2.new(1, -21, 0, 3)
+                or UDim2.new(0, 3, 0, 3)
+        })
 
-				if onScreen then
-
-					local d =
-						(Vector2.new(screen.X,screen.Y)-mouse).Magnitude
-
-					if d < distance then
-
-						distance = d
-						closest = part
-					end
-				end
-			end
-		end
-	end
-
-	return closest
+        callback(enabled)
+    end)
 end
 
---==================================================
+local function Slider(parent, title, minimum, maximum, default)
+    local card = Card(parent, 78)
+
+    local value = default
+
+    local heading = Label(card, title,
+        UDim2.new(1, -65, 0, 25),
+        UDim2.new(0, 13, 0, 5), 12, C.White)
+
+    local number = Label(card, tostring(value),
+        UDim2.new(0, 45, 0, 25),
+        UDim2.new(1, -57, 0, 5), 12, C.Blue)
+
+    number.TextXAlignment = Enum.TextXAlignment.Right
+
+    local bar = New("Frame", {
+        Position = UDim2.new(0, 13, 0, 47),
+        Size = UDim2.new(1, -26, 0, 7),
+        BackgroundColor3 = C.Hover
+    }, card)
+
+    Round(bar, 10)
+
+    local fill = New("Frame", {
+        Size = UDim2.new(
+            (value - minimum) / (maximum - minimum), 0, 1, 0
+        ),
+        BackgroundColor3 = C.Blue
+    }, bar)
+
+    Round(fill, 10)
+
+    local dragging = false
+
+    local function Update(x)
+        local percent = math.clamp(
+            (x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
+            0, 1
+        )
+
+        value = math.floor(
+            minimum + percent * (maximum - minimum) + 0.5
+        )
+
+        number.Text = tostring(value)
+        TweenService:Create(fill, TweenInfo.new(0.08), {
+            Size = UDim2.new(percent, 0, 1, 0)
+        }):Play()
+    end
+
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            Update(input.Position.X)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            Update(input.Position.X)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+-- PÁGINAS
+
+local Home = CreatePage("Home", "Bem-vindo", "Seu painel premium.")
+local Character = CreatePage("Character", "Personagem", "Controles de demonstração.")
+local Combat = CreatePage("Combat", "Combate", "Preferências visuais.")
+local Visual = CreatePage("Visual", "Visual", "Indicadores de interface.")
+
+CreateTab("Home", "⌂   INÍCIO", 1)
+CreateTab("Character", "◇   PERSONAGEM", 2)
+CreateTab("Combat", "◎   COMBATE", 3)
+CreateTab("Visual", "◈   VISUAL", 4)
+
+local welcome = Card(Home, 100)
+Label(welcome, "GREAT KING PREMIUM",
+    UDim2.new(1, -24, 0, 32),
+    UDim2.new(0, 13, 0, 14), 19, C.Blue).Font =
+    Enum.Font.GothamBold
+
+Label(welcome, "Design moderno. Controle organizado.",
+    UDim2.new(1, -24, 0, 25),
+    UDim2.new(0, 13, 0, 51), 12, C.Muted)
+
+Toggle(Character, "Velocidade", function() end)
+Slider(Character, "Valor de velocidade", 16, 150, 16)
+Toggle(Character, "Modo de voo", function() end)
+Slider(Character, "Velocidade de voo", 10, 150, 50)
+Toggle(Character, "Rotação", function() end)
+Slider(Character, "Velocidade de rotação", 1, 100, 20)
+Toggle(Character, "Modo de colisão", function() end)
+
+Toggle(Combat, "Assistência visual de mira", function() end)
+Slider(Combat, "Raio do indicador", 50, 400, 150)
+
+Toggle(Visual, "Indicador de caixa", function() end)
+Toggle(Visual, "Indicador de linha", function() end)
+Toggle(Visual, "Indicador de vida", function() end)
+
+ShowPage("Home")
+
 -- ARRASTAR
---==================================================
+local dragging = false
+local dragStart
+local startPosition
 
-local function Draggable(obj)
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPosition = Main.Position
+    end
+end)
 
-	local dragging = false
-	local dragStart
-	local startPos
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
 
-	obj.InputBegan:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
 
-		if input.UserInputType ==
-			Enum.UserInputType.MouseButton1 then
+-- BOTÃO FLUTUANTE
+local Floating = New("TextButton", {
+    Size = UDim2.fromOffset(58, 58),
+    Position = UDim2.new(0, 20, 0.5, -29),
+    BackgroundColor3 = C.Panel,
+    Text = "兔",
+    TextColor3 = C.Blue,
+    TextSize = 29,
+    Font = Enum.Font.GothamBold,
+    Visible = false
+}, Gui)
 
-			dragging = true
-			dragStart = input.Position
-			startPos = obj.Position
-
-			input.Changed:Connect(function()
-
-				if input.UserInputState ==
-					Enum.UserInputState.End then
-
-					dragging = false
-				end
-			end)
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-
-		if dragging and
-			input.UserInputType ==
-			Enum.UserInputType.MouseMovement then
-
-			local delta =
-				input.Position - dragStart
-
-			obj.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-end
-
-Draggable(Main)
-
---==================================================
--- COELHO FLUTUANTE 🐇
---==================================================
-
-local Floating = Instance.new("TextButton")
-
-Floating.Size = UDim2.new(0, 70, 0, 70)
-Floating.Position = UDim2.new(0, 20, 0.5, -35)
-
--- FUNDO PRETO
-Floating.BackgroundColor3 = Color3.fromRGB(0,0,0)
-
-Floating.Text = "🐇"
-Floating.TextColor3 = Color3.fromRGB(230,230,230)
-Floating.TextScaled = true
-Floating.Font = Enum.Font.GothamBold
-
-Floating.Visible = false
-Floating.Parent = Gui
-
-Corner(Floating, 18)
-Border(Floating)
-
---==================================================
--- COELHO ABRE/FECHA
---==================================================
+Round(Floating, 18)
+Outline(Floating, C.Blue)
 
 Floating.MouseButton1Click:Connect(function()
-	Main.Visible = not Main.Visible
+    Main.Visible = not Main.Visible
 end)
-
-Draggable(Floating)
-
---==================================================
--- FECHAR PAINEL
---==================================================
 
 Close.MouseButton1Click:Connect(function()
-	Main.Visible = false
+    Main.Visible = false
+    Floating.Visible = true
 end)
 
---==================================================
--- LOOP
---==================================================
-
-RunService.RenderStepped:Connect(function()
-
-	if not Unlocked then
-		return
-	end
-
-	local char = Player.Character
-	local hum = char and
-		char:FindFirstChildOfClass("Humanoid")
-
-	local root = char and
-		char:FindFirstChild("HumanoidRootPart")
-
-	-- SPEED
-	if hum then
-
-		if SpeedEnabled then
-			hum.WalkSpeed = SpeedValue
-		else
-			hum.WalkSpeed = 16
-		end
-	end
-
-	-- NOCLIP
-	if NoClipEnabled and char then
-
-		for _, obj in ipairs(char:GetDescendants()) do
-
-			if obj:IsA("BasePart") then
-				obj.CanCollide = false
-			end
-		end
-	end
-
-	-- FLY
-	if FlyEnabled and root and FlyVelocity then
-
-		local direction = Vector3.zero
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-			direction += Camera.CFrame.LookVector
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-			direction -= Camera.CFrame.LookVector
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-			direction -= Camera.CFrame.RightVector
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-			direction += Camera.CFrame.RightVector
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-			direction += Vector3.new(0,1,0)
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-			direction -= Vector3.new(0,1,0)
-		end
-
-		if direction.Magnitude > 0 then
-			direction =
-				direction.Unit * FlySpeed
-		end
-
-		FlyVelocity.Velocity = direction
-	end
-
-	-- SPIN
-	if SpinEnabled and root then
-
-		root.CFrame =
-			root.CFrame *
-			CFrame.Angles(
-				0,
-				math.rad(SpinSpeed),
-				0
-			)
-	end
-
-	-- FOV
-	FOVCircle.Visible = AimbotEnabled
-
-	if AimbotEnabled then
-
-		local mouse =
-			UserInputService:GetMouseLocation()
-
-		FOVCircle.Position =
-			UDim2.new(0, mouse.X, 0, mouse.Y)
-
-		FOVCircle.Size =
-			UDim2.new(
-				0,
-				AimFOV * 2,
-				0,
-				AimFOV * 2
-			)
-
-		local target = GetTarget()
-
-		if target then
-
-			Camera.CFrame =
-				CFrame.new(
-					Camera.CFrame.Position,
-					target.Position
-				)
-		end
-	end
-
-	-- ESP
-	for _, target in ipairs(Players:GetPlayers()) do
-
-		if target ~= Player then
-
-			local character = target.Character
-			local data = ESPObjects[target]
-
-			if character and
-				(ESPBoxEnabled or
-				ESPHealthEnabled or
-				ESPLineEnabled) then
-
-				if not data then
-					CreateESP(target)
-					data = ESPObjects[target]
-				end
-
-				if data then
-
-					data.Highlight.Enabled =
-						ESPBoxEnabled
-
-					data.HealthGui.Enabled =
-						ESPHealthEnabled
-
-					local targetHum =
-						character:FindFirstChildOfClass(
-							"Humanoid"
-						)
-
-					if targetHum then
-
-						local health =
-							math.clamp(
-								targetHum.Health /
-								math.max(
-									targetHum.MaxHealth,
-									1
-								),
-								0,
-								1
-							)
-
-						data.HealthFill.Size =
-							UDim2.new(
-								health,
-								0,
-								1,
-								0
-							)
-					end
-				end
-
-			else
-				RemoveESP(target)
-			end
-		end
-	end
-end)
-
---==================================================
--- RESPAWN
---==================================================
-
-Player.CharacterAdded:Connect(function(character)
-
-	task.wait(.5)
-
-	local hum =
-		character:WaitForChild("Humanoid")
-
-	if SpeedEnabled then
-		hum.WalkSpeed = SpeedValue
-	end
-
-	if FlyEnabled then
-
-		local root =
-			character:WaitForChild(
-				"HumanoidRootPart"
-			)
-
-		if FlyVelocity then
-			FlyVelocity:Destroy()
-		end
-
-		FlyVelocity =
-			Instance.new("BodyVelocity")
-
-		FlyVelocity.MaxForce =
-			Vector3.new(
-				math.huge,
-				math.huge,
-				math.huge
-			)
-
-		FlyVelocity.Velocity =
-			Vector3.zero
-
-		FlyVelocity.Parent = root
-	end
-end)
-
---==================================================
--- VERIFICAR KEY
---==================================================
+-- KEY
+local unlocked = false
 
 local function CheckKey()
+    if unlocked then return end
 
-	local key = PasswordBox.Text
+    local key = string.upper(KeyBox.Text:gsub("%s+", ""))
 
-	if SENHAS[key] then
-
-		Unlocked = true
-
-		PasswordFrame.Visible = false
-		Main.Visible = true
-
-		-- COELHO SÓ APARECE DEPOIS DA KEY
-		Floating.Visible = true
-
-		ShowPage(CharacterPage)
-
-	else
-
-		PasswordBox.Text = ""
-		PasswordBox.PlaceholderText = "KEY INCORRETA!"
-	end
+    if Keys[key] then
+        unlocked = true
+        Login.Visible = false
+        Main.Visible = true
+        Floating.Visible = true
+    else
+        Message.Text = "KEY INCORRETA"
+        Message.TextColor3 = C.Red
+        KeyBox.Text = ""
+    end
 end
 
-EnterButton.MouseButton1Click:Connect(CheckKey)
+Enter.MouseButton1Click:Connect(CheckKey)
 
-PasswordBox.FocusLost:Connect(function(enterPressed)
-
-	if enterPressed then
-		CheckKey()
-	end
+KeyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        CheckKey()
+    end
 end)
-
---==================================================
--- ESTADO INICIAL
---==================================================
-
-PasswordFrame.Visible = true
-Main.Visible = false
-Floating.Visible = false
-FOVCircle.Visible = false
-Unlocked = false
-
-ShowPage(CharacterPage)
